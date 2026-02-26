@@ -3,10 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Galería VR</title>
-
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-
 <style>
 html, body {
     width: 100%;
@@ -21,40 +19,47 @@ html, body {
 }
 </style>
 </head>
-
 <body>
 <canvas id="renderCanvas"></canvas>
 
 <script>
-
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
 const createScene = async function () {
-
     const scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color3(0.1, 0.1, 0.1);
 
-    // LUZ
-    const light = new BABYLON.HemisphericLight("light",
-        new BABYLON.Vector3(0, 1, 0), scene);
+    // Luz
+    const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
-    // SUELO
-    const ground = BABYLON.MeshBuilder.CreateGround("ground", {
-        width: 20,
-        height: 20
-    }, scene);
+    // Suelo
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 20, height: 20}, scene);
 
-    // ACTIVAR XR (VR)
-    const xr = await scene.createDefaultXRExperienceAsync({
-        floorMeshes: [ground]
-    });
+    // CUADRO LOW DETAIL
+    const cuadroLow = BABYLON.MeshBuilder.CreatePlane("cuadroLow", {width: 2, height: 2}, scene);
+    cuadroLow.position = new BABYLON.Vector3(0, 1.5, 2);
 
-    // MOVIMIENTO CON JOYSTICK
+    const matLow = new BABYLON.StandardMaterial("matLow", scene);
+    matLow.diffuseTexture = new BABYLON.Texture("https://picsum.photos/512", scene);
+    cuadroLow.material = matLow;
+
+    // CUADRO HIGH DETAIL
+    const cuadroHigh = BABYLON.MeshBuilder.CreatePlane("cuadroHigh", {width: 2, height: 2}, scene);
+    cuadroHigh.position = cuadroLow.position.clone();
+
+    const matHigh = new BABYLON.StandardMaterial("matHigh", scene);
+    matHigh.diffuseTexture = new BABYLON.Texture("https://picsum.photos/2048", scene);
+    cuadroHigh.material = matHigh;
+
+    cuadroHigh.setEnabled(false); // start hidden
+
+    // Activar XR (VR)
+    const xr = await scene.createDefaultXRExperienceAsync({floorMeshes: [ground]});
+
+    // Movimiento joystick
     scene.onBeforeRenderObservable.add(() => {
-
         xr.input.controllers.forEach((controller) => {
-
             const motionController = controller.motionController;
             if (!motionController) return;
 
@@ -62,7 +67,6 @@ const createScene = async function () {
             if (!thumbstick) return;
 
             const axes = thumbstick.axes;
-
             const camera = xr.baseExperience.camera;
 
             const forward = camera.getDirection(BABYLON.Vector3.Forward());
@@ -74,25 +78,36 @@ const createScene = async function () {
             right.normalize();
 
             const speed = 0.05;
-
             camera.position.addInPlace(forward.scale(axes.y * speed));
             camera.position.addInPlace(right.scale(axes.x * speed));
         });
+    });
+
+    // Cambio de detalle al acercarse
+    scene.onBeforeRenderObservable.add(() => {
+        const dist = BABYLON.Vector3.Distance(
+            xr.baseExperience.camera.position,
+            cuadroLow.position
+        );
+
+        if (dist < 1.5) {
+            cuadroLow.setEnabled(false);
+            cuadroHigh.setEnabled(true);
+        } else {
+            cuadroLow.setEnabled(true);
+            cuadroHigh.setEnabled(false);
+        }
     });
 
     return scene;
 };
 
 createScene().then(scene => {
-    engine.runRenderLoop(() => {
-        scene.render();
-    });
+    engine.runRenderLoop(() => scene.render());
 });
 
-window.addEventListener("resize", function () {
-    engine.resize();
-});
-
+window.addEventListener("resize", () => engine.resize());
 </script>
+
 </body>
 </html>
