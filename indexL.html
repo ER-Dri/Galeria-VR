@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Galería VR</title>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+<style>
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+</style>
+</head>
+
+<body>
+<canvas id="renderCanvas"></canvas>
+
+<script>
+
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
+
+const createScene = async function () {
+
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3(0.6, 0.6, 0.3);
+
+    // CÁMARA NORMAL (para PC)
+    const camera = new BABYLON.UniversalCamera("camera",
+        new BABYLON.Vector3(0, 1.6, -5), scene);
+    camera.attachControl(canvas, true);
+
+    // LUZ
+    const light = new BABYLON.HemisphericLight("light",
+        new BABYLON.Vector3(0, 1, 0), scene);
+
+    // SUELO
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {
+        width: 20,
+        height: 20
+    }, scene);
+
+    // CUADRO
+    const cuadro = BABYLON.MeshBuilder.CreatePlane("cuadro", {
+        width: 2,
+        height: 2
+    }, scene);
+
+    cuadro.position = new BABYLON.Vector3(0, 1.5, 2);
+
+    const material = new BABYLON.StandardMaterial("mat", scene);
+    material.diffuseTexture = new BABYLON.Texture(
+        "data:image/jpeg;base64,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",
+        scene
+    );
+    cuadro.material = material;
+    //CUADRO2 
+    const cuadro2 = BABYLON.MeshBuilder.CreatePlane("cuadro", {
+        width: 2,
+        height: 2
+    }, scene);
+
+    cuadro2.position = new BABYLON.Vector3(4, 1.5, 2);
+
+    const material2 = new BABYLON.StandardMaterial("mat", scene);
+    material2.diffuseTexture = new BABYLON.Texture(
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-Kl6HTrQW_i_90_P7vi6VJq-fjBEu_c8RraGi-WBHGbfA6ur5",
+        scene
+    );
+    cuadro2.material = material2;
+        //CUADRO3
+        const cuadro3 = BABYLON.MeshBuilder.CreatePlane("cuadro", {
+        width: 2,
+        height: 2
+    }, scene);
+
+    cuadro3.position = new BABYLON.Vector3(-4, 1.5, 2);
+
+    const material3 = new BABYLON.StandardMaterial("mat", scene);
+    material3.diffuseTexture = new BABYLON.Texture(
+        "https://upload.wikimedia.org/wikipedia/commons/9/99/Gioconda_%28copia_del_Museo_del_Prado_restaurada%29.jpg",
+        scene
+    );
+    cuadro3.material = material3;
+
+    // ACTIVAR XR (si el dispositivo lo soporta)
+    try {
+        const xr = await scene.createDefaultXRExperienceAsync({
+            floorMeshes: [ground]
+        });
+    } catch (e) {
+        console.log("XR no disponible en este dispositivo");
+    }
+
+    return scene;
+};
+
+createScene().then(scene => {
+    engine.runRenderLoop(() => scene.render());
+});
+
+window.addEventListener("resize", () => engine.resize());
+
+</script>
+
+</body>
+</html>
