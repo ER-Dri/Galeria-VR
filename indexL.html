@@ -41,7 +41,7 @@ const createScene = async function () {
 
     // LUZ
     const light = new BABYLON.HemisphericLight("light",
-        new BABYLON.Vector3(0, 1, 0), scene);
+        new BABYLON.Vector3( 0, 1, -1), scene);
 
     // SUELO
     const ground = BABYLON.MeshBuilder.CreateGround("ground", {
