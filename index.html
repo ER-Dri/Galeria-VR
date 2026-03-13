@@ -317,6 +317,11 @@ camera.checkCollisions = true;
     try {
         const xr = await scene.createDefaultXRExperienceAsync();
         console.log("XR experience ready");
+        // Enable locomotion for smooth movement in VR with controllers
+        const locomotion = xr.baseExperience.featuresManager.enableFeature(BABYLON.WebXRFeatureName.CONTROLLER_LOCOMOTION, "latest", {
+            locomotionType: 'locomotion',
+            movementSpeed: 1
+        });
         // Reattach controls when exiting XR to prevent issues
         xr.baseExperience.onStateChangedObservable.add((state) => {
             if (state === BABYLON.WebXRState.EXITING_XR) {
