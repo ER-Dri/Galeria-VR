@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Galería VR</title>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+<style>
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+</style>
+</head>
+
+<body>
+<canvas id="renderCanvas"></canvas>
+
+<script>
+
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
+
+const createScene = async function () {
+
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3(1, 0.9, 0.7);
+
+    // CÁMARA NORMAL (para PC)
+    const camera = new BABYLON.UniversalCamera("camera",
+        new BABYLON.Vector3(0, 1.6, -5), scene);
+    camera.attachControl(canvas, true);
+
+    // LUZ
+    const light = new BABYLON.HemisphericLight("light",
+        new BABYLON.Vector3( 0, 1, -1), scene);
+
+    // SUELO
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {
+        width: 20,
+        height: 20
+    }, scene);
+
+    // CUADRO
+    const cuadro = BABYLON.MeshBuilder.CreatePlane("cuadro", {
+        width: 2,
+        height: 2
+    }, scene);
+
+    cuadro.position = new BABYLON.Vector3(0, 1.5, 10);
+
+    const material = new BABYLON.StandardMaterial("mat", scene);
+    material.diffuseTexture = new BABYLON.Texture(
+        "https://wallpapers.com/images/featured/high-resolution-gfinds1akzwf6vcq.jpg",
+        scene
+    );
+    cuadro.material = material;
+    //CUADRO2 
+    const cuadro2 = BABYLON.MeshBuilder.CreatePlane("cuadro", {
+        width: 2,
+        height: 2
+    }, scene);
+
+    cuadro2.position = new BABYLON.Vector3(4, 1.5, 10);
+
+    const material2 = new BABYLON.StandardMaterial("mat", scene);
+    material2.diffuseTexture = new BABYLON.Texture(
+        "https://www.vice.com/wp-content/uploads/sites/2/2017/08/1501537457860-the-photo-full-version-is-76x-higher-resolution.jpeg",
+        scene
+    );
+    cuadro2.material = material2;
+        //CUADRO3
+        const cuadro3 = BABYLON.MeshBuilder.CreatePlane("cuadro", {
+        width: 2,
+        height: 2
+    }, scene);
+
+    cuadro3.position = new BABYLON.Vector3(-4, 1.5, 10);
+
+    const material3 = new BABYLON.StandardMaterial("mat", scene);
+    material3.diffuseTexture = new BABYLON.Texture(
+        "https://upload.wikimedia.org/wikipedia/commons/9/99/Gioconda_%28copia_del_Museo_del_Prado_restaurada%29.jpg",
+        scene
+    );
+    cuadro3.material = material3;
+        //CUADRO4
+        const cuadro4 = BABYLON.MeshBuilder.CreatePlane("cuadro", {
+        width: 2,
+        height: 2
+    }, scene);
+
+    cuadro4.position = new BABYLON.Vector3(-8, 1.5, 10);
+
+    const material4 = new BABYLON.StandardMaterial("mat", scene);
+    material4.diffuseTexture = new BABYLON.Texture(
+        "https://wallpapers.com/images/hd/high-resolution-nature-mountains-landscape-5n3jp9psonuimymd.jpg",
+        scene
+    );
+    cuadro4.material = material4;
+        //CUADRO5
+        const cuadro5 = BABYLON.MeshBuilder.CreatePlane("cuadro", {
+        width: 2,
+        height: 2
+    }, scene);
+
+    cuadro5.position = new BABYLON.Vector3(8, 1.5, 10);
+
+    const material5 = new BABYLON.StandardMaterial("mat", scene);
+    material5.diffuseTexture = new BABYLON.Texture(
+        "https://images.unsplash.com/photo-1498429089284-41f8cf3ffd39?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8aGlnaCUyMHJlcyUyMHdhbGxwYXBlcnxlbnwwfHwwfHx8MA%3D%3D",
+        scene
+    );
+    cuadro5.material = material5;
+
+    // ACTIVAR XR (si el dispositivo lo soporta)
+    try {
+        const xr = await scene.createDefaultXRExperienceAsync({
+            floorMeshes: [ground]
+        });
+    } catch (e) {
+        console.log("XR no disponible en este dispositivo");
+    }
+
+    return scene;
+};
+
+createScene().then(scene => {
+    engine.runRenderLoop(() => scene.render());
+});
+
+window.addEventListener("resize", () => engine.resize());
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Galería VR</title>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+<script src="https://cdn.babylonjs.com/babylonjs.webxr.js"></script>
+<style>
+html, body { width:100%; height:100%; margin:0; overflow:hidden; }
+#renderCanvas { width:100%; height:100%; touch-action:none; }
+</style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+<script>
+window.onerror = function(message, source, lineno, colno, error) {
+    console.error("Global error", message, "at", source + ":" + lineno + ":" + colno, error);
+    return false;
+};
+
+const canvas = document.getElementById("renderCanvas");
+let engine;
+let engineSupported = true;
+try {
+    engine = new BABYLON.Engine(canvas, true);
+    console.log("Engine created", engine);
+} catch (e) {
+    engineSupported = false;
+    console.error("Failed to create Babylon engine, WebGL may not be supported", e);
+    const msg = document.createElement('div');
+    msg.style.position = 'absolute';
+    msg.style.top = '0';
+    msg.style.left = '0';
+    msg.style.width = '100%';
+    msg.style.height = '100%';
+    msg.style.background = 'black';
+    msg.style.color = 'white';
+    msg.style.display = 'flex';
+    msg.style.alignItems = 'center';
+    msg.style.justifyContent = 'center';
+    msg.style.fontSize = '1.5em';
+    msg.innerHTML = 'WebGL no disponible o no soportado en este navegador.<br>' +
+        '<a href="https://get.webgl.org/" target="_blank" style="color:#0af;">Comprueba tu compatibilidad</a>';
+    document.body.appendChild(msg);
+
+    // fallback simple animation with 2D context
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+        let angle = 0;
+        function draw2D() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(angle);
+            ctx.fillStyle = '#444';
+            ctx.fillRect(-50, -50, 100, 100);
+            ctx.restore();
+            angle += 0.02;
+            requestAnimationFrame(draw2D);
+        }
+        draw2D();
+    }
+}
+
+const createScene = async function () {
+    console.log("createScene start");
+
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3(0.34, 0.35, 0.82);
+
+    const camera = new BABYLON.UniversalCamera(
+    "camera",
+    new BABYLON.Vector3(0, 1.7, 0),
+    scene
+);
+
+camera.attachControl(canvas, true);
+
+// Reduce mouse sensitivity for turning
+camera.inputs.attached.mouse.angularSensibilityX = 10000;
+camera.inputs.attached.mouse.angularSensibilityY = 10000;
+
+// Increase keyboard movement speed
+camera.speed = 0.5;
+
+// gravedad
+camera.applyGravity = true;
+camera.checkCollisions = true;
+    camera.ellipsoid = new BABYLON.Vector3(0.5, 0.9, 0.5);
+
+    const light = new BABYLON.HemisphericLight("light",
+        new BABYLON.Vector3(0, 1, 0), scene);
+
+    // SUELO
+    const ground = BABYLON.MeshBuilder.CreateGround("ground",
+        {width:20, height:20}, scene);
+    // colisiones
+    scene.collisionsEnabled = true;
+    ground.checkCollisions = true;
+
+    // PAREDES DEL MUSEO
+    // Pared trasera
+    const backWall = BABYLON.MeshBuilder.CreatePlane("backWall",
+        {width:20, height:5}, scene);
+    backWall.position.z = 5;
+    backWall.position.y = 2.5;
+    const backMat = new BABYLON.StandardMaterial("backMat", scene);
+    backMat.diffuseColor = new BABYLON.Color3(0.6, 1, 0.9);
+    backWall.material = backMat;
+    backWall.checkCollisions = true;
+
+    // Pared izquierda
+    const leftWall = BABYLON.MeshBuilder.CreatePlane("leftWall",
+        {width:15, height:5}, scene);
+    leftWall.position.x = -10;
+    leftWall.position.y = 2.5;
+    leftWall.position.z = 2.5;
+    leftWall.rotation.y = Math.PI / -2;
+    const leftMat = new BABYLON.StandardMaterial("leftMat", scene);
+    leftMat.diffuseColor = new BABYLON.Color3(0.6, 1, 0.9);
+    leftWall.material = leftMat;
+    leftWall.checkCollisions = true;
+
+    // Pared derecha
+    const rightWall = BABYLON.MeshBuilder.CreatePlane("rightWall",
+        {width:15, height:5}, scene);
+    rightWall.position.x = 10;
+    rightWall.position.y = 2.5;
+    rightWall.position.z = 2.5;
+    rightWall.rotation.y = -Math.PI / -2;
+    const rightMat = new BABYLON.StandardMaterial("rightMat", scene);
+    rightMat.diffuseColor = new BABYLON.Color3(0.6, 1, 0.9);
+    rightWall.material = rightMat;
+    rightWall.checkCollisions = true;
+
+    // Pared frontal
+    const frontWall = BABYLON.MeshBuilder.CreatePlane("frontWall",
+        {width:20, height:5}, scene);
+    frontWall.position.z = -5;
+    frontWall.position.y = 2.5;
+    frontWall.rotation.y = -Math.PI / -1;
+    const frontMat = new BABYLON.StandardMaterial("frontMat", scene);
+    frontMat.diffuseColor = new BABYLON.Color3(0.6, 1, 0.9);
+    frontWall.material = frontMat;
+    frontWall.checkCollisions = true;
+
+    // Techo
+    const ceiling = BABYLON.MeshBuilder.CreatePlane("ceiling",
+        {width:20, height:10}, scene);
+    ceiling.position.y = 5;
+    ceiling.position.z = 2.5;
+    ceiling.rotation.x = Math.PI / 2;
+    const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
+    ceilMat.diffuseColor = new BABYLON.Color3(1, 1, 1);
+    ceiling.material = ceilMat;
+    ceiling.checkCollisions = true;
+
+    // CUADRO (LOW DETAIL) - Pared trasera
+    const cuadroLow = BABYLON.MeshBuilder.CreatePlane("low",
+        {width:2, height:2}, scene);
+    cuadroLow.position.x = -3;
+    cuadroLow.position.y = 1.5;
+    cuadroLow.position.z = 4.5;
+
+    const matLow = new BABYLON.StandardMaterial("matLow", scene);
+    matLow.diffuseTexture = new BABYLON.Texture("https://picsum.photos/512", scene);
+    matLow.diffuseTexture.onLoadObservable.add(() => console.log("low texture loaded"));
+    cuadroLow.material = matLow;
+
+    // CUADRO (HIGH DETAIL)
+    const cuadroHigh = BABYLON.MeshBuilder.CreatePlane("high",
+        {width:2, height:2}, scene);
+    cuadroHigh.position = cuadroLow.position.clone();
+
+    const matHigh = new BABYLON.StandardMaterial("matHigh", scene);
+    matHigh.diffuseTexture = new BABYLON.Texture("https://picsum.photos/2048", scene);
+    matHigh.diffuseTexture.onLoadObservable.add(() => console.log("high texture loaded"));
+    cuadroHigh.material = matHigh;
+
+    cuadroHigh.setEnabled(false);
+
+    // SEGUNDO CUADRO (LOW DETAIL) - Pared trasera
+    const cuadroLow2 = BABYLON.MeshBuilder.CreatePlane("low2",
+        {width:2, height:2}, scene);
+    cuadroLow2.position.x = 0;
+    cuadroLow2.position.y = 1.5;
+    cuadroLow2.position.z = 4.5;
+
+    const matLow2 = new BABYLON.StandardMaterial("matLow2", scene);
+    matLow2.diffuseTexture = new BABYLON.Texture("https://picsum.photos/512?random=1", scene);
+    cuadroLow2.material = matLow2;
+
+    // SEGUNDO CUADRO (HIGH DETAIL)
+    const cuadroHigh2 = BABYLON.MeshBuilder.CreatePlane("high2",
+        {width:2, height:2}, scene);
+    cuadroHigh2.position = cuadroLow2.position.clone();
+
+    const matHigh2 = new BABYLON.StandardMaterial("matHigh2", scene);
+    matHigh2.diffuseTexture = new BABYLON.Texture("https://picsum.photos/2048?random=1", scene);
+    cuadroHigh2.material = matHigh2;
+
+    cuadroHigh2.setEnabled(false);
+
+    // TERCER CUADRO (LOW DETAIL) - Pared trasera
+    const cuadroLow3 = BABYLON.MeshBuilder.CreatePlane("low3",
+        {width:2, height:2}, scene);
+    cuadroLow3.position.x = 3;
+    cuadroLow3.position.y = 1.5;
+    cuadroLow3.position.z = 4.5;
+
+    const matLow3 = new BABYLON.StandardMaterial("matLow3", scene);
+    matLow3.diffuseTexture = new BABYLON.Texture("https://picsum.photos/512?random=2", scene);
+    cuadroLow3.material = matLow3;
+
+    // TERCER CUADRO (HIGH DETAIL)
+    const cuadroHigh3 = BABYLON.MeshBuilder.CreatePlane("high3",
+        {width:2, height:2}, scene);
+    cuadroHigh3.position = cuadroLow3.position.clone();
+
+    const matHigh3 = new BABYLON.StandardMaterial("matHigh3", scene);
+    matHigh3.diffuseTexture = new BABYLON.Texture("https://picsum.photos/2048?random=2", scene);
+    cuadroHigh3.material = matHigh3;
+
+    cuadroHigh3.setEnabled(false);
+
+    // OBJETOS DECORATIVOS
+    // Banco en el centro
+    const bench = BABYLON.MeshBuilder.CreateBox("bench", {width:4, height:1.2, depth:1}, scene);
+    bench.position.x = 0;
+    bench.position.y = 0.25;
+    bench.position.z = -2;
+    const benchMat = new BABYLON.StandardMaterial("benchMat", scene);
+    benchMat.diffuseColor = new BABYLON.Color3(0.4, 0.2, 0.1);
+    bench.material = benchMat;
+    bench.checkCollisions = true;
+
+    // Escultura izquierda
+    const pedestalLeft = BABYLON.MeshBuilder.CreateBox("pedestalLeft", {width:1, height:1, depth:1}, scene);
+    pedestalLeft.position.x = -7;
+    pedestalLeft.position.y = 0.5;
+    pedestalLeft.position.z = 2;
+    const pedMat = new BABYLON.StandardMaterial("pedMat", scene);
+    pedMat.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+    pedestalLeft.material = pedMat;
+    pedestalLeft.checkCollisions = true;
+
+    const sculptureLeft = BABYLON.MeshBuilder.CreateSphere("sculptureLeft", {diameter:0.8}, scene);
+    sculptureLeft.position.x = -7;
+    sculptureLeft.position.y = 1.2;
+    sculptureLeft.position.z = 2;
+    const sculptMat = new BABYLON.StandardMaterial("sculptMat", scene);
+    sculptMat.diffuseColor = new BABYLON.Color3(0.7, 0.7, 0.7);
+    sculptureLeft.material = sculptMat;
+    sculptureLeft.checkCollisions = true;
+
+    // Escultura derecha
+    const pedestalRight = BABYLON.MeshBuilder.CreateBox("pedestalRight", {width:1, height:1, depth:1}, scene);
+    pedestalRight.position.x = 7;
+    pedestalRight.position.y = 0.5;
+    pedestalRight.position.z = 2;
+    pedestalRight.material = pedMat;
+    pedestalRight.checkCollisions = true;
+
+    const sculptureRight = BABYLON.MeshBuilder.CreateSphere("sculptureRight", {diameter:0.8}, scene);
+    sculptureRight.position.x = 7;
+    sculptureRight.position.y = 1.2;
+    sculptureRight.position.z = 2;
+    sculptureRight.material = sculptMat;
+    sculptureRight.checkCollisions = true;
+
+    // CAMBIO POR DISTANCIA
+    scene.onBeforeRenderObservable.add(() => {
+        // Primer cuadro
+        const dist1 = BABYLON.Vector3.Distance(
+            camera.position,
+            cuadroLow.position
+        );
+
+        if (dist1 < 1.5) {
+            cuadroLow.setEnabled(false);
+            cuadroHigh.setEnabled(true);
+        } else {
+            cuadroLow.setEnabled(true);
+            cuadroHigh.setEnabled(false);
+        }
+
+        // Segundo cuadro
+        const dist2 = BABYLON.Vector3.Distance(
+            camera.position,
+            cuadroLow2.position
+        );
+
+        if (dist2 < 1.5) {
+            cuadroLow2.setEnabled(false);
+            cuadroHigh2.setEnabled(true);
+        } else {
+            cuadroLow2.setEnabled(true);
+            cuadroHigh2.setEnabled(false);
+        }
+
+        // Tercer cuadro
+        const dist3 = BABYLON.Vector3.Distance(
+            camera.position,
+            cuadroLow3.position
+        );
+
+        if (dist3 < 1.5) {
+            cuadroLow3.setEnabled(false);
+            cuadroHigh3.setEnabled(true);
+        } else {
+            cuadroLow3.setEnabled(true);
+            cuadroHigh3.setEnabled(false);
+        }
+    });
+
+    try {
+        const xr = await scene.createDefaultXRExperienceAsync();
+        console.log("XR experience ready");
+        // Enable locomotion for smooth movement in VR with controllers
+        const locomotion = xr.baseExperience.featuresManager.enableFeature(BABYLON.WebXRFeatureName.CONTROLLER_LOCOMOTION, "latest", {
+            locomotionType: 'locomotion',
+            movementSpeed: 1
+        });
+        // Reattach controls when exiting XR to prevent issues
+        xr.baseExperience.onStateChangedObservable.add((state) => {
+            if (state === BABYLON.WebXRState.EXITING_XR) {
+                camera.attachControl(canvas, true);
+            }
+        });
+    } catch (e) {
+        console.warn("XR initialization failed, continuing without XR:", e);
+    }
+
+    return scene;
+};
+
+if (engineSupported) {
+    createScene().then(scene => {
+        console.log("scene created, starting render loop");
+        engine.runRenderLoop(() => scene.render());
+    }).catch(err => {
+        console.error("createScene failed:", err);
+    });
+} else {
+    console.log("Skipping scene creation because WebGL is not available.");
+}
+
+window.addEventListener("resize", function () {
+    engine.resize();
+});
+</script>
+
+</body>
+</html>

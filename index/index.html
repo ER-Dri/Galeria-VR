@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Galería VR</title>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+<style>
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+</style>
+</head>
+
+<body>
+<canvas id="renderCanvas"></canvas>
+
+<script>
+
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
+
+const createScene = async function () {
+
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+
+    // CÁMARA NORMAL (para PC)
+    const camera = new BABYLON.UniversalCamera("camera",
+        new BABYLON.Vector3(0, 1.6, -5), scene);
+    camera.attachControl(canvas, true);
+
+    // LUZ
+    const light = new BABYLON.HemisphericLight("light",
+        new BABYLON.Vector3(0, 1, 0), scene);
+
+    // SUELO
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {
+        width: 20,
+        height: 20
+    }, scene);
+
+    // CUADRO
+    const cuadro = BABYLON.MeshBuilder.CreatePlane("cuadro", {
+        width: 2,
+        height: 2
+    }, scene);
+
+    cuadro.position = new BABYLON.Vector3(0, 1.5, 2);
+
+    const material = new BABYLON.StandardMaterial("mat", scene);
+    material.diffuseTexture = new BABYLON.Texture(
+        "https://picsum.photos/1024",
+        scene
+    );
+    cuadro.material = material;
+
+    // ACTIVAR XR (si el dispositivo lo soporta)
+    try {
+        const xr = await scene.createDefaultXRExperienceAsync({
+            floorMeshes: [ground]
+        });
+    } catch (e) {
+        console.log("XR no disponible en este dispositivo");
+    }
+
+    return scene;
+};
+
+createScene().then(scene => {
+    engine.runRenderLoop(() => scene.render());
+});
+
+window.addEventListener("resize", () => engine.resize());
+
+</script>
+
+</body>
+</html>
